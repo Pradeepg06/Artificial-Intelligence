@@ -1,0 +1,190 @@
+8-Puzzle Problem using Iterative Deepening Search (IDS)
+
+Enter the start state as 9 numbers (0 for blank):
+ 1 2 3 0 4 6 7 5 8
+
+Start State:
+(1, 2, 3)
+(0, 4, 6)
+(7, 5, 8)
+
+Goal State:
+(1, 2, 3)
+(4, 5, 6)
+(7, 8, 0)
+
+🔹 Searching at depth limit: 0
+Exploring state with Manhattan Distance = 3
+(1, 2, 3)
+(0, 4, 6)
+(7, 5, 8)
+
+🔹 Searching at depth limit: 1
+Exploring state with Manhattan Distance = 3
+(1, 2, 3)
+(0, 4, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 4
+(0, 2, 3)
+(1, 4, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 4
+(1, 2, 3)
+(7, 4, 6)
+(0, 5, 8)
+
+Exploring state with Manhattan Distance = 2
+(1, 2, 3)
+(4, 0, 6)
+(7, 5, 8)
+
+🔹 Searching at depth limit: 2
+Exploring state with Manhattan Distance = 3
+(1, 2, 3)
+(0, 4, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 4
+(0, 2, 3)
+(1, 4, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 5
+(2, 0, 3)
+(1, 4, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 4
+(1, 2, 3)
+(7, 4, 6)
+(0, 5, 8)
+
+Exploring state with Manhattan Distance = 5
+(1, 2, 3)
+(7, 4, 6)
+(5, 0, 8)
+
+Exploring state with Manhattan Distance = 2
+(1, 2, 3)
+(4, 0, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 3
+(1, 0, 3)
+(4, 2, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 1
+(1, 2, 3)
+(4, 5, 6)
+(7, 0, 8)
+
+Exploring state with Manhattan Distance = 3
+(1, 2, 3)
+(4, 6, 0)
+(7, 5, 8)
+
+🔹 Searching at depth limit: 3
+Exploring state with Manhattan Distance = 3
+(1, 2, 3)
+(0, 4, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 4
+(0, 2, 3)
+(1, 4, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 5
+(2, 0, 3)
+(1, 4, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 6
+(2, 4, 3)
+(1, 0, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 6
+(2, 3, 0)
+(1, 4, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 4
+(1, 2, 3)
+(7, 4, 6)
+(0, 5, 8)
+
+Exploring state with Manhattan Distance = 5
+(1, 2, 3)
+(7, 4, 6)
+(5, 0, 8)
+
+Exploring state with Manhattan Distance = 6
+(1, 2, 3)
+(7, 0, 6)
+(5, 4, 8)
+
+Exploring state with Manhattan Distance = 4
+(1, 2, 3)
+(7, 4, 6)
+(5, 8, 0)
+
+Exploring state with Manhattan Distance = 2
+(1, 2, 3)
+(4, 0, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 3
+(1, 0, 3)
+(4, 2, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 4
+(0, 1, 3)
+(4, 2, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 4
+(1, 3, 0)
+(4, 2, 6)
+(7, 5, 8)
+
+Exploring state with Manhattan Distance = 1
+(1, 2, 3)
+(4, 5, 6)
+(7, 0, 8)
+
+Exploring state with Manhattan Distance = 2
+(1, 2, 3)
+(4, 5, 6)
+(0, 7, 8)
+
+Exploring state with Manhattan Distance = 0
+(1, 2, 3)
+(4, 5, 6)
+(7, 8, 0)
+
+✅ Solution found in 3 moves:
+
+Step 0:
+(1, 2, 3)
+(0, 4, 6)
+(7, 5, 8)
+
+Step 1:
+(1, 2, 3)
+(4, 0, 6)
+(7, 5, 8)
+
+Step 2:
+(1, 2, 3)
+(4, 5, 6)
+(7, 0, 8)
+
+Step 3:
+(1, 2, 3)
+(4, 5, 6)
+(7, 8, 0)
