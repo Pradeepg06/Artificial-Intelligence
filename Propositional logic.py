@@ -1,27 +1,27 @@
 import itertools
 import pandas as pd
 
-# --- Helper function to evaluate a logic expression ---
+# --- Function to evaluate a logical expression ---
 def evaluate(expr, model):
-    """Evaluates a propositional logic expression based on the model (truth values)."""
     local_dict = {symbol: model[symbol] for symbol in model}
-    return eval(expr, {}, local_dict)
+    try:
+        return eval(expr, {}, local_dict)
+    except Exception as e:
+        print(f"Error evaluating '{expr}' with {model}: {e}")
+        return False
 
-# --- Truth Table Entailment Function ---
+# --- Function for Truth Table Entailment ---
 def truth_table_entailment(kb, query, symbols):
-    """Generates the truth table and checks if KB entails the query."""
     rows = []
     entails = True
 
-    for values in itertools.product([True, False], repeat=len(symbols)):
+    # Generate combinations: from all False → all True
+    for values in itertools.product([False, True], repeat=len(symbols)):
         model = dict(zip(symbols, values))
-
-        # Evaluate all KB statements and query
         kb_values = [evaluate(stmt, model) for stmt in kb]
         kb_true = all(kb_values)
         query_val = evaluate(query, model)
 
-        # Add to table
         row = {sym: model[sym] for sym in symbols}
         for i, stmt in enumerate(kb):
             row[f"KB{i+1}"] = kb_values[i]
@@ -29,34 +29,39 @@ def truth_table_entailment(kb, query, symbols):
         row["Query"] = query_val
         rows.append(row)
 
-        # Check entailment condition
         if kb_true and not query_val:
             entails = False
 
-    # Create DataFrame for truth table
     df = pd.DataFrame(rows)
     return entails, df
 
-# --- Example Knowledge Base ---
-# KB: (R → W) and (R)
-# Query: W
-kb = [
-    "(not R or W)",   # R → W
-    "R"               # R is True
-]
-query = "W"
-symbols = ['R', 'W']
+# --- User Input ---
+print("=== Propositional Logic Entailment Checker ===")
+symbols = input("Enter symbols (separated by spaces): ").split()
+
+n = int(input("Enter number of KB statements: "))
+kb = []
+print("Enter KB statements (use 'not', 'and', 'or', parentheses):")
+for i in range(n):
+    kb.append(input(f"KB{i+1}: "))
+
+query = input("Enter the query statement: ")
 
 # --- Run Entailment Check ---
 entails, truth_table = truth_table_entailment(kb, query, symbols)
 
-# --- Display Results ---
+# Sort truth table from False False False → True True True
+truth_table = truth_table.sort_values(by=symbols, ascending=True, ignore_index=True)
+
+# --- Output ---
 print("\nKnowledge Base:")
 for i, s in enumerate(kb, 1):
     print(f"  {i}. {s}")
-print("\nQuery:", query)
 
+print("\nQuery:", query)
 print("\n--- Truth Table ---")
 print(truth_table.to_string(index=False))
 
-print("\nDoes KB entail the query?", "✅ YES" if entails else "❌ NO")
+print("\nResult:")
+print("✅ The query IS ENTAILED by the Knowledge Base."
+      if entails else "❌ The query is NOT entailed by the Knowledge Base.")
