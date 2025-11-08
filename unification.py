@@ -1,177 +1,117 @@
-# Unification in First Order Logic (Robinson’s Algorithm)
-# -------------------------------------------------------
-# Supports:
-#   - Variables: lowercase identifiers (x, y, z)
-#   - Constants: uppercase identifiers (John, Apple)
-#   - Functions: f(a, g(x)), Knows(John, x), etc.
+# Unification in First Order Logic (FOL-Style Output)
+# ---------------------------------------------------
+# Supports natural expressions like:
+# Eats(x, apple)
+# Eats(riya, y)
 
 import re
-from dataclasses import dataclass
-from typing import List, Dict, Optional, Tuple, Union
 
-# --- Term model ---
-@dataclass(frozen=True)
-class Var:
-    name: str
-    def __repr__(self): return self.name
+# --- Parser: Converts expression string -> nested tuple ---
+def parse(expr):
+    expr = expr.strip()
+    tokens = re.findall(r"[A-Za-z_][A-Za-z0-9_]*|\(|\)|,", expr)
+    stack = []
+    current = []
 
-@dataclass(frozen=True)
-class Const:
-    name: str
-    def __repr__(self): return self.name
-
-@dataclass(frozen=True)
-class Func:
-    name: str
-    args: Tuple['Term', ...]
-    def __repr__(self): return f"{self.name}({', '.join(map(repr, self.args))})"
-
-Term = Union[Var, Const, Func]
-
-# --- Tokenizer ---
-_token_re = re.compile(r'\s*([A-Za-z_][A-Za-z0-9_]*|\(|\)|,)\s*')
-
-def tokenize(s: str):
-    pos = 0
-    while pos < len(s):
-        m = _token_re.match(s, pos)
-        if not m:
-            raise ValueError(f"Unexpected character at position {pos}: {s[pos:pos+10]!r}")
-        tok = m.group(1)
-        yield tok
-        pos = m.end()
-
-# --- Parser ---
-def parse_term(s: str) -> Term:
-    tokens = list(tokenize(s))
-    idx = 0
-
-    def next_tok():
-        nonlocal idx
-        return tokens[idx] if idx < len(tokens) else None
-
-    def consume(expected=None):
-        nonlocal idx
-        t = next_tok()
-        if expected and t != expected:
-            raise ValueError(f"Expected {expected!r} but got {t!r}")
-        idx += 1
-        return t
-
-    def parse_atom() -> Term:
-        t = next_tok()
-        if t is None:
-            raise ValueError("Unexpected end")
-        consume(t)
-        name = t
-        if next_tok() == '(':
-            consume('(')
-            args = []
-            if next_tok() != ')':
-                while True:
-                    args.append(parse_atom())
-                    if next_tok() == ',':
-                        consume(',')
-                        continue
-                    break
-            consume(')')
-            return Func(name, tuple(args))
+    for token in tokens:
+        if token == '(':
+            stack.append(current)
+            func_name = current.pop()
+            current = [func_name]
+        elif token == ')':
+            func = tuple(current)
+            current = stack.pop()
+            current.append(func)
+        elif token == ',':
+            continue
         else:
-            if name[0].islower():
-                return Var(name)
-            else:
-                return Const(name)
+            current.append(token)
+    if len(current) == 1:
+        return current[0]
+    return tuple(current)
 
-    term = parse_atom()
-    if next_tok() is not None:
-        raise ValueError("Extra tokens after parsing")
-    return term
+# --- Convert nested tuple back to FOL-like string ---
+def format_fol(expr):
+    if isinstance(expr, str):
+        return expr
+    return f"{expr[0]}({', '.join(format_fol(sub) for sub in expr[1:])})"
 
-# --- Substitution and helpers ---
-Subst = Dict[str, Term]
-
-def apply_subst(term: Term, subst: Subst) -> Term:
-    if isinstance(term, Var):
-        if term.name in subst:
-            return apply_subst(subst[term.name], subst)
-        return term
-    if isinstance(term, Const):
-        return term
-    if isinstance(term, Func):
-        return Func(term.name, tuple(apply_subst(a, subst) for a in term.args))
-    raise TypeError("Unknown term type")
-
-def occurs_check(var: Var, term: Term, subst: Subst) -> bool:
-    term = apply_subst(term, subst)
-    if isinstance(term, Var):
-        return var.name == term.name
-    if isinstance(term, Func):
-        return any(occurs_check(var, a, subst) for a in term.args)
+# --- Occurs check ---
+def occurs_check(var, expr):
+    if var == expr:
+        return True
+    if isinstance(expr, tuple):
+        return any(occurs_check(var, sub) for sub in expr)
     return False
 
-def compose_subst(s1: Subst, s2: Subst) -> Subst:
-    new = {v: apply_subst(t, s1) for v, t in s2.items()}
-    new.update(s1)
-    return new
+# --- Apply substitution ---
+def substitute(expr, subst):
+    if isinstance(expr, str):
+        return subst.get(expr, expr)
+    return tuple(substitute(sub, subst) for sub in expr)
 
-# --- Unification Algorithm ---
-def unify(t1: Term, t2: Term, subst: Optional[Subst]=None) -> Optional[Subst]:
+# --- Unification algorithm ---
+def unify(Y1, Y2, subst=None):
     if subst is None:
         subst = {}
-    pairs = [(t1, t2)]
-    s = dict(subst)
-    while pairs:
-        a, b = pairs.pop()
-        a = apply_subst(a, s)
-        b = apply_subst(b, s)
-        if repr(a) == repr(b):
-            continue
-        if isinstance(a, Var):
-            if occurs_check(a, b, s):
-                return None
-            s = compose_subst({a.name: b}, s)
-            continue
-        if isinstance(b, Var):
-            if occurs_check(b, a, s):
-                return None
-            s = compose_subst({b.name: a}, s)
-            continue
-        if isinstance(a, Const) and isinstance(b, Const):
-            if a.name != b.name:
-                return None
-            continue
-        if isinstance(a, Func) and isinstance(b, Func):
-            if a.name != b.name or len(a.args) != len(b.args):
-                return None
-            pairs.extend(zip(a.args, b.args))
-            continue
-        return None
-    return s
 
-# --- Helper for output ---
-def format_subst(subst: Optional[Subst]) -> str:
-    if subst is None:
-        return "FAIL (no unifier)"
-    if not subst:
-        return "{} (empty substitution)"
-    items = [f"{v} -> {repr(apply_subst(t, subst))}" for v, t in subst.items()]
-    return "{" + ", ".join(items) + "}"
+    Y1 = substitute(Y1, subst)
+    Y2 = substitute(Y2, subst)
 
-# --- Example Runs ---
-examples = [
-    ("Eats(x, Apple)", "Eats(Riya, y)"),
-    ("p(f(a), g(Y))", "p(X, X)"),
-    ("Knows(John, x)", "Knows(x, Elisabeth)"),
-    ("f(x, g(y))", "f(g(z), g(a))"),
-    ("P(x, h(y))", "P(a, f(z))"),
-    ("Ancestor(x, Father(x))", "Ancestor(Father(John), y)"),
-    ("f(x,x)", "f(a,b)"),
-    ("Knows(x, x)", "Knows(John, y)")
-]
+    if Y1 == Y2:
+        return subst
 
-print("Unification Examples:\n")
-for a_str, b_str in examples:
-    A = parse_term(a_str)
-    B = parse_term(b_str)
-    subst = unify(A, B)
-    print(f"{a_str}  =?=  {b_str}\n  => {format_subst(subst)}\n")
+    if isinstance(Y1, str):
+        if occurs_check(Y1, Y2):
+            return "FAILURE"
+        subst[Y1] = Y2
+        return subst
+
+    if isinstance(Y2, str):
+        if occurs_check(Y2, Y1):
+            return "FAILURE"
+        subst[Y2] = Y1
+        return subst
+
+    if not (isinstance(Y1, tuple) and isinstance(Y2, tuple)):
+        return "FAILURE"
+
+    if Y1[0] != Y2[0] or len(Y1) != len(Y2):
+        return "FAILURE"
+
+    for a, b in zip(Y1[1:], Y2[1:]):
+        subst = unify(a, b, subst)
+        if subst == "FAILURE":
+            return "FAILURE"
+
+    return subst
+
+# --- MAIN PROGRAM ---
+print("=== Unification in First Order Logic (FOL-style Output) ===")
+print("Example: Eats(x, apple)   and   Eats(riya, y)\n")
+
+expr1 = input("Enter first expression: ")
+expr2 = input("Enter second expression: ")
+
+try:
+    parsed1 = parse(expr1)
+    parsed2 = parse(expr2)
+    result = unify(parsed1, parsed2)
+
+    print("\nParsed Expression 1:", format_fol(parsed1))
+    print("Parsed Expression 2:", format_fol(parsed2))
+
+    if result == "FAILURE":
+        print("\n❌ Unification failed.")
+    else:
+        print("\n✅ Most General Unifier (MGU):")
+        for var, val in result.items():
+            print(f"  {var} = {format_fol(val)}")
+
+        # Show unified form
+        unified1 = substitute(parsed1, result)
+        unified2 = substitute(parsed2, result)
+        print("\nUnified Form:", format_fol(unified1))
+
+except Exception as e:
+    print("Error:", e)
